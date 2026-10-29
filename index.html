@@ -1319,6 +1319,9 @@ function openVideoModal(url, title){
   openModal(qs('#videoModal'));
 }
 
+/* Images may be inline (built in the artifact CMS) or hosted on the Sanity CDN. */
+function isImg(u){ return typeof u === 'string' && (u.indexOf('data:image/') === 0 || u.indexOf('https://cdn.sanity.io/') === 0); }
+
 function renderPortfolio(){
   var list = document.getElementById('filmList');
   list.innerHTML = '';
@@ -1332,7 +1335,7 @@ function renderPortfolio(){
   }
   items.forEach(function(item, idx){
     var thumbWrap = el('div');
-    var hasThumb = item.thumb && item.thumb.indexOf('data:') === 0;
+    var hasThumb = isImg(item.thumb);
     if(hasThumb){
       var thumbDiv = el('div', {class: 'film-thumb'});
       thumbDiv.appendChild(el('img', {src: item.thumb, alt: ''}));
@@ -1365,7 +1368,8 @@ function formatShowDate(iso){
 function renderShows(){
   var list = document.getElementById('showsList');
   list.innerHTML = '';
-  var items = STATE.shows.items || [];
+  var today = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  var items = (STATE.shows.items || []).filter(function(s){ return !s.date || s.date >= today; });
   if(items.length === 0){
     list.appendChild(el('div', {class: 'empty-note'}, [
       el('p', {text: "Nothing on the calendar yet. Follow Team Jax Nation so you don't miss the announcement."}),
@@ -1415,7 +1419,7 @@ function renderMerch(){
   }
   items.forEach(function(item){
     var card = el('div', {class: 'merch-card'});
-    if(item.imageUrl && item.imageUrl.indexOf('data:') === 0){
+    if(isImg(item.imageUrl)){
       card.appendChild(el('div', {class: 'merch-photo-real'}, [el('img', {src: item.imageUrl, alt: ''})]));
     }
     var buyBtn = el('button', {type: 'button', class: 'btn btn-yellow btn-small', style: 'position:relative;z-index:1;', text: 'I want one'});
@@ -1433,7 +1437,7 @@ function renderMerch(){
 function renderFounderPhoto(){
   var img = document.getElementById('founderPhoto');
   var initSpan = document.getElementById('founderInitial');
-  if(STATE.founder.photoUrl && STATE.founder.photoUrl.indexOf('data:') === 0){
+  if(isImg(STATE.founder.photoUrl)){
     img.src = STATE.founder.photoUrl;
     img.style.display = 'block';
     initSpan.style.display = 'none';
@@ -3314,6 +3318,9 @@ function openVideoModal(url, title){
   openModal(qs('#videoModal'));
 }
 
+/* Images may be inline (built in the artifact CMS) or hosted on the Sanity CDN. */
+function isImg(u){ return typeof u === 'string' && (u.indexOf('data:image/') === 0 || u.indexOf('https://cdn.sanity.io/') === 0); }
+
 function renderPortfolio(){
   var list = document.getElementById('filmList');
   list.innerHTML = '';
@@ -3327,7 +3334,7 @@ function renderPortfolio(){
   }
   items.forEach(function(item, idx){
     var thumbWrap = el('div');
-    var hasThumb = item.thumb && item.thumb.indexOf('data:') === 0;
+    var hasThumb = isImg(item.thumb);
     if(hasThumb){
       var thumbDiv = el('div', {class: 'film-thumb'});
       thumbDiv.appendChild(el('img', {src: item.thumb, alt: ''}));
@@ -3360,7 +3367,8 @@ function formatShowDate(iso){
 function renderShows(){
   var list = document.getElementById('showsList');
   list.innerHTML = '';
-  var items = STATE.shows.items || [];
+  var today = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  var items = (STATE.shows.items || []).filter(function(s){ return !s.date || s.date >= today; });
   if(items.length === 0){
     list.appendChild(el('div', {class: 'empty-note'}, [
       el('p', {text: "Nothing on the calendar yet. Follow Team Jax Nation so you don't miss the announcement."}),
@@ -3410,7 +3418,7 @@ function renderMerch(){
   }
   items.forEach(function(item){
     var card = el('div', {class: 'merch-card'});
-    if(item.imageUrl && item.imageUrl.indexOf('data:') === 0){
+    if(isImg(item.imageUrl)){
       card.appendChild(el('div', {class: 'merch-photo-real'}, [el('img', {src: item.imageUrl, alt: ''})]));
     }
     var buyBtn = el('button', {type: 'button', class: 'btn btn-yellow btn-small', style: 'position:relative;z-index:1;', text: 'I want one'});
@@ -3428,7 +3436,7 @@ function renderMerch(){
 function renderFounderPhoto(){
   var img = document.getElementById('founderPhoto');
   var initSpan = document.getElementById('founderInitial');
-  if(STATE.founder.photoUrl && STATE.founder.photoUrl.indexOf('data:') === 0){
+  if(isImg(STATE.founder.photoUrl)){
     img.src = STATE.founder.photoUrl;
     img.style.display = 'block';
     initSpan.style.display = 'none';
