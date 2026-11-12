@@ -321,6 +321,42 @@
   }
   .art-cta{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;}
 
+  /* Art gallery */
+  .art-gallery{background:var(--ink);color:var(--on-ink);padding:90px 0 110px;}
+  .art-gallery[hidden],.past-wrap[hidden]{display:none;}
+  .art-gallery .kicker{color:var(--yellow);font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:13px;margin-bottom:10px;}
+  .art-gallery h3{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,4vw,48px);margin-bottom:8px;}
+  .art-grid{columns:3 300px;column-gap:18px;margin-top:36px;}
+  .art-card{break-inside:avoid;margin:0 0 18px;position:relative;cursor:pointer;overflow:hidden;background:#111;}
+  .art-card img{display:block;width:100%;height:auto;transition:transform .5s ease;}
+  .art-card:hover img,.art-card:focus-visible img{transform:scale(1.03);}
+  .art-card figcaption{position:absolute;left:0;right:0;bottom:0;padding:46px 18px 16px;background:linear-gradient(180deg,rgba(6,6,7,0),rgba(6,6,7,0.88));display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .3s ease;}
+  .art-card:hover figcaption,.art-card:focus-visible figcaption{opacity:1;}
+  @media (hover:none){.art-card figcaption{opacity:1;}}
+  .art-card .t{font-family:var(--font-display);font-weight:800;font-size:18px;}
+  .art-card .m{font-size:12.5px;color:var(--on-ink-muted);}
+  .art-lightbox{position:fixed;inset:0;z-index:5000;background:rgba(6,6,7,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 20px 24px;overflow:auto;}
+  .art-lightbox img{max-width:min(1100px,100%);max-height:68vh;width:auto;height:auto;object-fit:contain;}
+  .art-lightbox-close{position:absolute;top:16px;right:20px;background:none;border:1px solid var(--line-ink);color:var(--on-ink);padding:8px 16px;font:inherit;font-weight:700;cursor:pointer;}
+  .art-lightbox-cap{max-width:720px;text-align:center;color:var(--on-ink);display:flex;flex-direction:column;gap:6px;}
+  .art-lightbox-cap strong{font-family:var(--font-display);font-size:22px;}
+  .art-lightbox-cap span{color:var(--yellow);font-size:13.5px;font-weight:700;}
+  .art-lightbox-cap p{color:var(--on-ink-muted);font-size:14.5px;line-height:1.6;}
+  /* Past shows */
+  .past-wrap{padding-top:20px;padding-bottom:100px;}
+  .past-wrap h3{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,3.6vw,42px);margin:50px 0 6px;}
+  .past-wrap .past-sub{color:var(--on-ink-muted);margin-bottom:30px;}
+  .past-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  @media (max-width:900px){.past-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:560px){.past-grid{grid-template-columns:1fr;}}
+  .past-card{border-top:1px solid var(--line-ink);padding-top:18px;display:flex;flex-direction:column;gap:10px;}
+  .past-photo{aspect-ratio:4/3;overflow:hidden;background:#111;}
+  .past-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .past-date{font-family:var(--font-display);font-weight:800;color:var(--yellow);font-size:15px;letter-spacing:1px;}
+  .past-title{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.2;}
+  .past-meta{font-size:14px;color:var(--on-ink-muted);}
+  .past-recap{font-size:14.5px;line-height:1.6;color:var(--on-ink-muted);}
+
   /* Shows */
   .show-row{display:grid;grid-template-columns:150px 1fr auto;gap:26px;align-items:center;padding:30px 0;border-top:1px solid var(--line-ink);}
   .show-list .show-row:last-child{border-bottom:1px solid var(--line-ink);}
@@ -734,6 +770,13 @@ THAT MOVE YOU.</h2>
         </div>
       </div>
     </div>
+    <div class="art-gallery" id="artGalleryWrap" hidden>
+      <div class="container">
+        <p class="kicker">The collection</p>
+        <h3>Selected works</h3>
+        <div class="art-grid" id="artGrid"></div>
+      </div>
+    </div>
   </section>
 
   <!-- SHOWS -->
@@ -743,6 +786,11 @@ THAT MOVE YOU.</h2>
       <h2 class="h-page reveal" data-bind="shows.heading">Upcoming shows</h2>
     </div>
     <div class="container show-list" id="showsList" style="padding-bottom:70px;"></div>
+    <div class="container past-wrap" id="pastShowsWrap" hidden>
+      <h3>Past shows</h3>
+      <p class="past-sub">A look back at where we have performed.</p>
+      <div class="past-grid" id="pastShowsGrid"></div>
+    </div>
   </section>
 
   <!-- MERCH -->
@@ -1369,7 +1417,9 @@ function renderShows(){
   var list = document.getElementById('showsList');
   list.innerHTML = '';
   var today = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  var items = (STATE.shows.items || []).filter(function(s){ return !s.date || s.date >= today; });
+  var allShows = STATE.shows.items || [];
+  var items = allShows.filter(function(s){ return !s.date || s.date >= today; });
+  renderPastShows(allShows.filter(function(s){ return s.date && s.date < today; }));
   if(items.length === 0){
     list.appendChild(el('div', {class: 'empty-note'}, [
       el('p', {text: "Nothing on the calendar yet. Follow Team Jax Nation so you don't miss the announcement."}),
@@ -1399,6 +1449,72 @@ function renderShows(){
       ]),
       actionWrap
     ]));
+  });
+}
+
+function renderPastShows(past){
+  var wrap = document.getElementById('pastShowsWrap');
+  var grid = document.getElementById('pastShowsGrid');
+  if(!wrap || !grid) return;
+  grid.innerHTML = '';
+  if(!past.length){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  past.sort(function(a, b){ return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+  past.forEach(function(show){
+    var dt = formatShowDate(show.date);
+    var card = el('div', {class: 'past-card'});
+    if(isImg(show.image)){
+      card.appendChild(el('div', {class: 'past-photo'}, [el('img', {src: show.image, alt: show.title || 'Past show', loading: 'lazy', decoding: 'async'})]));
+    }
+    card.appendChild(el('div', {class: 'past-date', text: (dt.big + ' ' + dt.sub).trim()}));
+    card.appendChild(el('div', {class: 'past-title', text: show.title || 'Show'}));
+    if(show.venue) card.appendChild(el('div', {class: 'past-meta', text: show.venue}));
+    if(show.recap) card.appendChild(el('p', {class: 'past-recap', text: show.recap}));
+    grid.appendChild(card);
+  });
+}
+
+function artMeta(a){ return [a.year, a.medium, a.size].filter(Boolean).join(' · '); }
+
+function openArtLightbox(a){
+  var old = document.getElementById('artLightbox');
+  if(old) old.remove();
+  var box = el('div', {class: 'art-lightbox', id: 'artLightbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': a.title || 'Artwork'});
+  var onKey;
+  var close = function(){ box.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+  onKey = function(e){ if(e.key === 'Escape') close(); };
+  var closeBtn = el('button', {type: 'button', class: 'art-lightbox-close', 'aria-label': 'Close', text: 'Close', onclick: close});
+  box.appendChild(closeBtn);
+  box.appendChild(el('img', {src: isImg(a.full) ? a.full : a.image, alt: a.title || 'Artwork'}));
+  box.appendChild(el('div', {class: 'art-lightbox-cap'}, [
+    el('strong', {text: a.title || 'Untitled'}),
+    artMeta(a) ? el('span', {text: artMeta(a)}) : null,
+    a.description ? el('p', {text: a.description}) : null
+  ]));
+  box.addEventListener('click', function(e){ if(e.target === box) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(box);
+  document.body.style.overflow = 'hidden';
+  closeBtn.focus();
+}
+
+function renderArt(){
+  var wrap = document.getElementById('artGalleryWrap');
+  var grid = document.getElementById('artGrid');
+  if(!wrap || !grid) return;
+  var items = ((STATE.artwork && STATE.artwork.items) || []).filter(function(a){ return isImg(a.image); });
+  grid.innerHTML = '';
+  if(!items.length){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  items.forEach(function(a){
+    var fig = el('figure', {class: 'art-card', tabindex: '0', role: 'button', 'aria-label': 'View ' + (a.title || 'artwork')}, [
+      el('img', {src: a.image, alt: (a.title || 'Artwork') + (a.medium ? ', ' + a.medium : ''), loading: 'lazy', decoding: 'async'}),
+      el('figcaption', {}, [el('span', {class: 't', text: a.title || 'Untitled'}), el('span', {class: 'm', text: artMeta(a)})])
+    ]);
+    var view = function(){ openArtLightbox(a); };
+    fig.addEventListener('click', view);
+    fig.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); view(); } });
+    grid.appendChild(fig);
   });
 }
 
@@ -1991,6 +2107,7 @@ document.addEventListener('DOMContentLoaded', function(){
   renderPortfolio();
   renderShows();
   renderMerch();
+  renderArt();
   renderFounderPhoto();
   initModals();
   initForms();
@@ -2326,6 +2443,42 @@ document.addEventListener('DOMContentLoaded', function(){
     padding:170px 0 110px;
   }
   .art-cta{margin-top:34px;display:flex;gap:16px;flex-wrap:wrap;}
+
+  /* Art gallery */
+  .art-gallery{background:var(--ink);color:var(--on-ink);padding:90px 0 110px;}
+  .art-gallery[hidden],.past-wrap[hidden]{display:none;}
+  .art-gallery .kicker{color:var(--yellow);font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:13px;margin-bottom:10px;}
+  .art-gallery h3{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,4vw,48px);margin-bottom:8px;}
+  .art-grid{columns:3 300px;column-gap:18px;margin-top:36px;}
+  .art-card{break-inside:avoid;margin:0 0 18px;position:relative;cursor:pointer;overflow:hidden;background:#111;}
+  .art-card img{display:block;width:100%;height:auto;transition:transform .5s ease;}
+  .art-card:hover img,.art-card:focus-visible img{transform:scale(1.03);}
+  .art-card figcaption{position:absolute;left:0;right:0;bottom:0;padding:46px 18px 16px;background:linear-gradient(180deg,rgba(6,6,7,0),rgba(6,6,7,0.88));display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .3s ease;}
+  .art-card:hover figcaption,.art-card:focus-visible figcaption{opacity:1;}
+  @media (hover:none){.art-card figcaption{opacity:1;}}
+  .art-card .t{font-family:var(--font-display);font-weight:800;font-size:18px;}
+  .art-card .m{font-size:12.5px;color:var(--on-ink-muted);}
+  .art-lightbox{position:fixed;inset:0;z-index:5000;background:rgba(6,6,7,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:60px 20px 24px;overflow:auto;}
+  .art-lightbox img{max-width:min(1100px,100%);max-height:68vh;width:auto;height:auto;object-fit:contain;}
+  .art-lightbox-close{position:absolute;top:16px;right:20px;background:none;border:1px solid var(--line-ink);color:var(--on-ink);padding:8px 16px;font:inherit;font-weight:700;cursor:pointer;}
+  .art-lightbox-cap{max-width:720px;text-align:center;color:var(--on-ink);display:flex;flex-direction:column;gap:6px;}
+  .art-lightbox-cap strong{font-family:var(--font-display);font-size:22px;}
+  .art-lightbox-cap span{color:var(--yellow);font-size:13.5px;font-weight:700;}
+  .art-lightbox-cap p{color:var(--on-ink-muted);font-size:14.5px;line-height:1.6;}
+  /* Past shows */
+  .past-wrap{padding-top:20px;padding-bottom:100px;}
+  .past-wrap h3{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,3.6vw,42px);margin:50px 0 6px;}
+  .past-wrap .past-sub{color:var(--on-ink-muted);margin-bottom:30px;}
+  .past-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  @media (max-width:900px){.past-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:560px){.past-grid{grid-template-columns:1fr;}}
+  .past-card{border-top:1px solid var(--line-ink);padding-top:18px;display:flex;flex-direction:column;gap:10px;}
+  .past-photo{aspect-ratio:4/3;overflow:hidden;background:#111;}
+  .past-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .past-date{font-family:var(--font-display);font-weight:800;color:var(--yellow);font-size:15px;letter-spacing:1px;}
+  .past-title{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.2;}
+  .past-meta{font-size:14px;color:var(--on-ink-muted);}
+  .past-recap{font-size:14.5px;line-height:1.6;color:var(--on-ink-muted);}
 
   /* Shows */
   .show-row{display:grid;grid-template-columns:150px 1fr auto;gap:26px;align-items:center;padding:30px 0;border-top:1px solid var(--line-ink);}
@@ -2736,6 +2889,13 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
       </div>
     </div>
+    <div class="art-gallery" id="artGalleryWrap" hidden>
+      <div class="container">
+        <p class="kicker">The collection</p>
+        <h3>Selected works</h3>
+        <div class="art-grid" id="artGrid"></div>
+      </div>
+    </div>
   </section>
 
   <!-- SHOWS -->
@@ -2745,6 +2905,11 @@ document.addEventListener('DOMContentLoaded', function(){
       <h2 class="h-page reveal" data-bind="shows.heading"></h2>
     </div>
     <div class="container show-list" id="showsList" style="padding-bottom:70px;"></div>
+    <div class="container past-wrap" id="pastShowsWrap" hidden>
+      <h3>Past shows</h3>
+      <p class="past-sub">A look back at where we have performed.</p>
+      <div class="past-grid" id="pastShowsGrid"></div>
+    </div>
   </section>
 
   <!-- MERCH -->
@@ -3368,7 +3533,9 @@ function renderShows(){
   var list = document.getElementById('showsList');
   list.innerHTML = '';
   var today = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  var items = (STATE.shows.items || []).filter(function(s){ return !s.date || s.date >= today; });
+  var allShows = STATE.shows.items || [];
+  var items = allShows.filter(function(s){ return !s.date || s.date >= today; });
+  renderPastShows(allShows.filter(function(s){ return s.date && s.date < today; }));
   if(items.length === 0){
     list.appendChild(el('div', {class: 'empty-note'}, [
       el('p', {text: "Nothing on the calendar yet. Follow Team Jax Nation so you don't miss the announcement."}),
@@ -3398,6 +3565,72 @@ function renderShows(){
       ]),
       actionWrap
     ]));
+  });
+}
+
+function renderPastShows(past){
+  var wrap = document.getElementById('pastShowsWrap');
+  var grid = document.getElementById('pastShowsGrid');
+  if(!wrap || !grid) return;
+  grid.innerHTML = '';
+  if(!past.length){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  past.sort(function(a, b){ return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+  past.forEach(function(show){
+    var dt = formatShowDate(show.date);
+    var card = el('div', {class: 'past-card'});
+    if(isImg(show.image)){
+      card.appendChild(el('div', {class: 'past-photo'}, [el('img', {src: show.image, alt: show.title || 'Past show', loading: 'lazy', decoding: 'async'})]));
+    }
+    card.appendChild(el('div', {class: 'past-date', text: (dt.big + ' ' + dt.sub).trim()}));
+    card.appendChild(el('div', {class: 'past-title', text: show.title || 'Show'}));
+    if(show.venue) card.appendChild(el('div', {class: 'past-meta', text: show.venue}));
+    if(show.recap) card.appendChild(el('p', {class: 'past-recap', text: show.recap}));
+    grid.appendChild(card);
+  });
+}
+
+function artMeta(a){ return [a.year, a.medium, a.size].filter(Boolean).join(' · '); }
+
+function openArtLightbox(a){
+  var old = document.getElementById('artLightbox');
+  if(old) old.remove();
+  var box = el('div', {class: 'art-lightbox', id: 'artLightbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': a.title || 'Artwork'});
+  var onKey;
+  var close = function(){ box.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+  onKey = function(e){ if(e.key === 'Escape') close(); };
+  var closeBtn = el('button', {type: 'button', class: 'art-lightbox-close', 'aria-label': 'Close', text: 'Close', onclick: close});
+  box.appendChild(closeBtn);
+  box.appendChild(el('img', {src: isImg(a.full) ? a.full : a.image, alt: a.title || 'Artwork'}));
+  box.appendChild(el('div', {class: 'art-lightbox-cap'}, [
+    el('strong', {text: a.title || 'Untitled'}),
+    artMeta(a) ? el('span', {text: artMeta(a)}) : null,
+    a.description ? el('p', {text: a.description}) : null
+  ]));
+  box.addEventListener('click', function(e){ if(e.target === box) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(box);
+  document.body.style.overflow = 'hidden';
+  closeBtn.focus();
+}
+
+function renderArt(){
+  var wrap = document.getElementById('artGalleryWrap');
+  var grid = document.getElementById('artGrid');
+  if(!wrap || !grid) return;
+  var items = ((STATE.artwork && STATE.artwork.items) || []).filter(function(a){ return isImg(a.image); });
+  grid.innerHTML = '';
+  if(!items.length){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  items.forEach(function(a){
+    var fig = el('figure', {class: 'art-card', tabindex: '0', role: 'button', 'aria-label': 'View ' + (a.title || 'artwork')}, [
+      el('img', {src: a.image, alt: (a.title || 'Artwork') + (a.medium ? ', ' + a.medium : ''), loading: 'lazy', decoding: 'async'}),
+      el('figcaption', {}, [el('span', {class: 't', text: a.title || 'Untitled'}), el('span', {class: 'm', text: artMeta(a)})])
+    ]);
+    var view = function(){ openArtLightbox(a); };
+    fig.addEventListener('click', view);
+    fig.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); view(); } });
+    grid.appendChild(fig);
   });
 }
 
@@ -3990,6 +4223,7 @@ document.addEventListener('DOMContentLoaded', function(){
   renderPortfolio();
   renderShows();
   renderMerch();
+  renderArt();
   renderFounderPhoto();
   initModals();
   initForms();

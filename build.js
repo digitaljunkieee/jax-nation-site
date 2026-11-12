@@ -17,7 +17,12 @@ const QUERY = `{
   "film": *[_type=="film"] | order(coalesce(sortNumber, 9999) asc, _createdAt desc){
     title, blurb, youtubeUrl, "thumb": thumbnail.asset->url
   },
-  "show": *[_type=="show" && defined(date)] | order(date asc){ title, date, venue, price },
+  "show": *[_type=="show" && defined(date)] | order(date asc){
+    title, date, venue, price, recap, "image": image.asset->url
+  },
+  "artwork": *[_type=="artwork" && defined(image.asset)] | order(coalesce(sortNumber, 9999) asc, _createdAt desc){
+    title, year, medium, size, description, "image": image.asset->url
+  },
   "merch": *[_type=="merch"] | order(coalesce(sortNumber, 9999) asc, _createdAt desc){
     name, price, description, "imageUrl": image.asset->url
   },
@@ -46,11 +51,19 @@ function merge(state, c) {
   }));
   if (films.length) state.portfolio.items = films;
 
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const shows = (c.show || []).filter((s) => str(s.title) && str(s.date) >= yesterday).map((s) => ({
+  // All shows go in. The page itself splits them into Upcoming and Past using today's date,
+  // so a show moves to Past on its own without a rebuild.
+  const shows = (c.show || []).filter((s) => str(s.title) && str(s.date)).map((s) => ({
     title: str(s.title), date: str(s.date), venue: str(s.venue), price: str(s.price),
+    recap: str(s.recap), image: img(s.image, 800),
   }));
   state.shows.items = shows; // an empty list is valid: it shows the "nothing yet" message
+
+  const art = (c.artwork || []).filter((a) => str(a.title) && img(a.image, 900)).map((a) => ({
+    title: str(a.title), year: str(a.year), medium: str(a.medium), size: str(a.size), description: str(a.description),
+    image: img(a.image, 900), full: img(a.image, 1800),
+  }));
+  state.artwork = { items: art };
 
   const merch = (c.merch || []).filter((m) => str(m.name)).map((m) => ({
     name: str(m.name), price: str(m.price), description: str(m.description), imageUrl: img(m.imageUrl, 700),
@@ -66,7 +79,7 @@ function merge(state, c) {
   if (str(s.founderRole)) state.founder.role = str(s.founderRole);
   if (str(s.founderBio)) state.founder.bio = str(s.founderBio);
   if (img(s.founderPhoto, 800)) state.founder.photoUrl = img(s.founderPhoto, 800);
-  return { films: films.length, shows: shows.length, merch: merch.length };
+  return { films: films.length, shows: shows.length, art: art.length, merch: merch.length };
 }
 
 (async () => {
@@ -101,5 +114,5 @@ function merge(state, c) {
   const stateTag = STATE_OPEN + JSON.stringify(state).replace(/</g, '\\u003c') + '</script>';
   const out = prerender(pristineTop, state) + stateTag + html.slice(sEnd + '</script>'.length);
   fs.writeFileSync(FILE, out);
-  log(`Updated index.html: ${counts.films} films, ${counts.shows} shows, ${counts.merch} merch items.`);
+  log(`Updated index.html: ${counts.films} films, ${counts.shows} shows, ${counts.art} artworks, ${counts.merch} merch items.`);
 })().catch((e) => { console.error('[sanity-build] ' + e.message + ', keeping index.html as committed.'); });
